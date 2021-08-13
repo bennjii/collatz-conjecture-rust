@@ -1,8 +1,10 @@
-use std::time::{Instant};
-use indicatif::{ProgressBar};
-use std::convert::TryInto;
 use std::io::{self, Write};
-use termion::{color, style};
+
+use std::time::{Instant};
+use indicatif::{ProgressBar, ProgressStyle};
+use std::convert::TryInto;
+
+use console::style;
 
 struct Solve {
     steps: u128,
@@ -29,17 +31,43 @@ fn main() {
 }
 
 fn solve_collatz_set(lim: u128) {
-    println!("{} Attempting up to: {}", color::Fg(color::Green), lim);
+    let mut solves: Vec<Solve> = vec![];
+    println!("\n\t{} {}", style("Attempting up to:").green().bold(), lim);
 
     let bar = ProgressBar::new(lim.try_into().unwrap());
+    bar.set_style(ProgressStyle::default_bar()
+        .template("\t[{elapsed_precise}] {bar:40.green/gray} {pos:>7}/{len:7} {msg}")
+        .progress_chars("##-"));
 
     for i in 1..lim {
         let solve: Solve = solve_collatz(i);
+        solves.push(solve);
         bar.inc(1);
         // println!("\n\nSolved Sequence! \nSteps: \t\t{}\nHighest Number: {}\nSolve Time: \t{:?}", solve.steps, solve.highest_number, Instant::now().duration_since(solve.time))
     } 
 
     bar.finish();
+    println!("\n\t{} Analysis:", style("Solved!").green().bold());
+
+    analyse(solves);
+}
+
+fn analyse(solves: Vec<Solve>) {
+    println!("");
+
+    let mut total_steps = 0;
+    let mut highest_number = 0;
+
+    for (_i, x) in solves.iter().enumerate() {
+        total_steps += x.steps;
+
+        if(x.highest_number > highest_number) { highest_number = x.highest_number; }
+        
+    }
+
+    println!("\tTotal Steps: \t\t{} ", total_steps);
+    println!("\tHighest Number Reached: {} ", highest_number);
+    println!("\n");
 }
 
 fn solve_collatz(n: u128) -> Solve {
